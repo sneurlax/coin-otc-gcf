@@ -12,6 +12,26 @@ const MessagingResponse = twilio.twiml.MessagingResponse;
 const projectId = process.env.GCLOUD_PROJECT;
 const region = 'us-central1';
 
+exports.send = (req, res) => {
+  var client = new twilio(accountSid, authToken);
+
+  let isValid = true;
+
+  client.messages.create({
+    body: 'Hello from Node',
+    to: '+14053566661',  // Text this number
+    from: '+14158532646' // From a valid Twilio number
+  })
+  .then((message) => console.log(message.sid));
+  // TODO proper response, eg.:
+  // res
+  //   .type('text/plain')
+  //   .status(STATUS_CODE)
+  //   .send('RESPONSE MESSAGE')
+  //   .end();
+  // return;
+};
+
 exports.reply = (req, res) => {
   let isValid = true;
 
@@ -52,19 +72,6 @@ exports.reply = (req, res) => {
     .send('Twilio SMS Response not needed.')
     .end();
   return;
-};
-
-exports.send = (req, res) => {
-  var client = new twilio(accountSid, authToken);
-
-  let isValid = true;
-
-  client.messages.create({
-    body: 'Hello from Node',
-    to: '+14053566661',  // Text this number
-    from: '+14158532646' // From a valid Twilio number
-  })
-  .then((message) => console.log(message.sid));
 };
 
 require('make-runnable');
