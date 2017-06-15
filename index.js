@@ -12,9 +12,13 @@ const MessagingResponse = twilio.twiml.MessagingResponse;
 const projectId = process.env.GCLOUD_PROJECT;
 const region = 'us-central1';
 
-exports.entry = () => { return 204 };
+exports.auth = () => {
+  // TODO proper auth
+  return 204
+};
 
 exports.send = (req, res) => {
+  // TODO take input
   var client = new twilio(accountSid, authToken);
 
   let isValid = true;
