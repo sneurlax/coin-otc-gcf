@@ -12,15 +12,6 @@ const MessagingResponse = twilio.twiml.MessagingResponse;
 const projectId = process.env.GCLOUD_PROJECT;
 const region = 'us-central1';
 
-var client = new twilio(accountSid, authToken);
-
-client.messages.create({
-  body: 'Hello from Node',
-  to: '+14053566661',  // Text this number
-  from: '+14158532646' // From a valid Twilio number
-})
-.then((message) => console.log(message.sid));
-
 exports.reply = (req, res) => {
   let isValid = true;
 
@@ -64,6 +55,8 @@ exports.reply = (req, res) => {
 };
 
 exports.send = (req, res) => {
+  var client = new twilio(accountSid, authToken);
+
   let isValid = true;
 
   client.messages.create({
