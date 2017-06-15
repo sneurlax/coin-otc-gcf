@@ -3,10 +3,23 @@
 const twilio = require('twilio');
 const config = require('./config.json');
 
+const accountSid = 'AC1b9c9ffd2e1b25cb611e4312e1e6979a'; // Your Account SID from www.twilio.com/console
+const authToken = '828599c4764a07fdf3943beda477db18';   // Your Auth Token from www.twilio.com/console
+
+
 const MessagingResponse = twilio.twiml.MessagingResponse;
 
 const projectId = process.env.GCLOUD_PROJECT;
 const region = 'us-central1';
+
+var client = new twilio(accountSid, authToken);
+
+client.messages.create({
+  body: 'Hello from Node',
+  to: '+14053566661',  // Text this number
+  from: '+14158532646' // From a valid Twilio number
+})
+.then((message) => console.log(message.sid));
 
 exports.reply = (req, res) => {
   let isValid = true;
@@ -49,3 +62,16 @@ exports.reply = (req, res) => {
     .end();
   return;
 };
+
+exports.send = (req, res) => {
+  let isValid = true;
+
+  client.messages.create({
+    body: 'Hello from Node',
+    to: '+14053566661',  // Text this number
+    from: '+14158532646' // From a valid Twilio number
+  })
+  .then((message) => console.log(message.sid));
+};
+
+require('make-runnable');
