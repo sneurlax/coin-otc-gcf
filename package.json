@@ -1,6 +1,6 @@
 {
   "name": "coin-otc-gcf",
-  "version": "1.0.0",
+  "version": "0.0.1",
   "description": "Google Cloud Function(s) for Coin-OTC",
   "main": "index.js",
   "scripts": {
@@ -10,7 +10,7 @@
     "type": "git",
     "url": "git+https://github.com/sneurlax/coin-otc-gcf.git"
   },
-  "author": "",
+  "author": "sneurlax",
   "license": "ISC",
   "bugs": {
     "url": "https://github.com/sneurlax/coin-otc-gcf/issues"
