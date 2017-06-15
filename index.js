@@ -12,6 +12,8 @@ const MessagingResponse = twilio.twiml.MessagingResponse;
 const projectId = process.env.GCLOUD_PROJECT;
 const region = 'us-central1';
 
+exports.entry = () => { return 204 };
+
 exports.send = (req, res) => {
   var client = new twilio(accountSid, authToken);
 
@@ -74,4 +76,4 @@ exports.reply = (req, res) => {
   return;
 };
 
-require('make-runnable');
+require('make-runnable/custom')({ printOutputFrame: false });
