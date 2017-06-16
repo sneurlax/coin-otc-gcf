@@ -1,24 +1,65 @@
 'use strict';
 
-const twilio = require('twilio');
-const config = require('./config.json');
 const functions = require('firebase-functions');
+const HH = require('firebase-humanhash');
+const DEFAULT_HASHER = new HH.HumanHasher();
 
+const twilio = require('twilio');
+const twilioConfig = require('./config.json');
+
+// Firebase Setup
+const admin = require('firebase-admin');
+const serviceAccount = require('./coin-otc-595e97625833.json');
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount),
+  databaseURL: `https://${process.env.GCLOUD_PROJECT}.firebaseio.com`
+});
+
+// Twilio Setup
 const accountSid = 'AC1b9c9ffd2e1b25cb611e4312e1e6979a'; // Your Account SID from www.twilio.com/console
 const authToken = '828599c4764a07fdf3943beda477db18';   // Your Auth Token from www.twilio.com/console
 
 const MessagingResponse = twilio.twiml.MessagingResponse;
 
+// Google Cloud Platform Setup
 const projectId = process.env.GCLOUD_PROJECT;
 const region = 'us-central1';
 
-exports.test = () => {
-  console.log(pad(randomIntFromInterval(0, 999999), 6));
+exports.test = (req, res) => {
+  var db = admin.database();
+  var ref = db.ref('coin-otc');
+  ordersRef.set({
+    '2FA': pad(randomIntFromInterval(0, 999999), 6)
+  });
+  // firebase.database().ref('orders').set({
+  //   '2FA': pad(randomIntFromInterval(0, 999999), 6),
+  //   'id': newRef.key(),
+  //   'HHid': DEFAULT_HASHER.humanize(newRef.key())
+  // });
+  // 
+  // var ref = firebase.database().ref('/coin-otc/order/');
+  // var newRef = ref.push(); // doesn't call the server
+  // var newOrder = {
+  //   '2FA': pad(randomIntFromInterval(0, 999999), 6),
+  //   'id': newRef.key(),
+  //   'HHid': DEFAULT_HASHER.humanize(newRef.key())
+  // };
+  // newRef.set(newItem); // calls the server
+  res
+    .type('text/plain')
+    .status(200)
+    .send(pad(randomIntFromInterval(0, 999999), 6));
+  return
 };
 
-exports.auth = () => {
+exports.auth = (req, res) => {
   // TODO proper auth
-  return 204
+  res
+    .type('text/plain')
+    .status(204)
+    .send('NO AUTH METHOD DEFINED')
+    .end();
+  return
 };
 
 exports.send = (req, res) => {
@@ -33,13 +74,14 @@ exports.send = (req, res) => {
     from: '+14158532646' // From a valid Twilio number
   })
   .then((message) => console.log(message.sid));
-  // TODO proper response, eg.:
-  // res
-  //   .type('text/plain')
-  //   .status(STATUS_CODE)
-  //   .send('RESPONSE MESSAGE')
-  //   .end();
-  // return;
+
+  // TODO proper response
+  res
+    .type('text/plain')
+    .status(200)
+    .send('MESSAGE SENT')
+    .end();
+  return
 };
 
 exports.reply = (req, res) => {
@@ -48,7 +90,7 @@ exports.reply = (req, res) => {
   // Only validate that requests came from Twilio when the function has been
   // deployed to production.
   if (process.env.NODE_ENV === 'production') {
-    isValid = twilio.validateExpressRequest(req, config.TWILIO_AUTH_TOKEN, {
+    isValid = twilio.validateExpressRequest(req, twilioConfig.TWILIO_AUTH_TOKEN, {
       url: `https://${region}-${projectId}.cloudfunctions.net/reply`
     });
   }
@@ -60,7 +102,7 @@ exports.reply = (req, res) => {
       .status(403)
       .send('Twilio Request Validation Failed.')
       .end();
-    return;
+    return
   }
 
   // Prepare a response to the SMS message
@@ -81,7 +123,7 @@ exports.reply = (req, res) => {
     .status(204)
     .send('Twilio SMS Response not needed.')
     .end();
-  return;
+  return
 };
 
 function randomIntFromInterval(min, max) {
