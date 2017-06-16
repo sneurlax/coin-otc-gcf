@@ -28,6 +28,7 @@ const region = 'us-central1';
 exports.test = (req, res) => {
   var db = admin.database();
   var ref = db.ref('coin-otc');
+  var ordersRef = ref.child('orders');
   ordersRef.set({
     '2FA': pad(randomIntFromInterval(0, 999999), 6)
   });
