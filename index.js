@@ -2,10 +2,10 @@
 
 const twilio = require('twilio');
 const config = require('./config.json');
+const functions = require('firebase-functions');
 
 const accountSid = 'AC1b9c9ffd2e1b25cb611e4312e1e6979a'; // Your Account SID from www.twilio.com/console
 const authToken = '828599c4764a07fdf3943beda477db18';   // Your Auth Token from www.twilio.com/console
-
 
 const MessagingResponse = twilio.twiml.MessagingResponse;
 
