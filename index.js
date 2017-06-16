@@ -27,11 +27,23 @@ const region = 'us-central1';
 
 exports.test = (req, res) => {
   var db = admin.database();
-  var ref = db.ref('coin-otc');
-  var ordersRef = ref.child('orders');
-  ordersRef.set({
-    '2FA': pad(randomIntFromInterval(0, 999999), 6)
-  });
+  var ref = db.ref('orders');
+  var ordersRef = ref.child('buys');
+  var newOrderRef = ordersRef.push();
+  var order = {
+    '2FA': pad(randomIntFromInterval(0, 999999), 6),
+    'HHid': DEFAULT_HASHER.humanize(newOrderRef.key)
+  }
+  newOrderRef.set(order);
+
+  // .then()?
+  // .catch()?
+
+  // ordersRef.set({
+  //   '2FA': pad(randomIntFromInterval(0, 999999), 6),
+  //   'id': newRef.key(),
+  //   'HHid': DEFAULT_HASHER.humanize(newRef.key())
+  // });
   // firebase.database().ref('orders').set({
   //   '2FA': pad(randomIntFromInterval(0, 999999), 6),
   //   'id': newRef.key(),
@@ -49,7 +61,7 @@ exports.test = (req, res) => {
   res
     .type('text/plain')
     .status(200)
-    .send(pad(randomIntFromInterval(0, 999999), 6));
+    .send(order['2FA']);
   return
 };
 
