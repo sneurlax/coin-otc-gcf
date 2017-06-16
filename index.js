@@ -12,6 +12,10 @@ const MessagingResponse = twilio.twiml.MessagingResponse;
 const projectId = process.env.GCLOUD_PROJECT;
 const region = 'us-central1';
 
+exports.test = () => {
+  console.log(pad(randomIntFromInterval(0, 999999), 6));
+};
+
 exports.auth = () => {
   // TODO proper auth
   return 204
@@ -79,5 +83,15 @@ exports.reply = (req, res) => {
     .end();
   return;
 };
+
+function randomIntFromInterval(min, max) {
+  return Math.floor(Math.random()*(max-min+1)+min);
+}
+
+function pad(n, width, z) {
+  z = z || '0';
+  n = n + '';
+  return n.length >= width ? n : new Array(width - n.length + 1).join(z) + n;
+}
 
 require('make-runnable/custom')({ printOutputFrame: false });
