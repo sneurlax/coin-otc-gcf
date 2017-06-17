@@ -9,10 +9,10 @@ const twilioConfig = require('./config.json');
 
 // Firebase Setup
 const admin = require('firebase-admin');
-const serviceAccount = require('./coin-otc-595e97625833.json');
+const serviceAccount = require('./coin-otc-firebase-adminsdk-s3vrv-c0f6e6ed01.json');
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
-  databaseURL: `https://${process.env.GCLOUD_PROJECT}.firebaseio.com`
+  databaseURL: 'https://coin-otc.firebaseio.com'
 });
 
 // Twilio Setup
@@ -26,38 +26,20 @@ const projectId = process.env.GCLOUD_PROJECT;
 const region = 'us-central1';
 
 exports.test = (req, res) => {
+  // Push new order to Firebase
   var db = admin.database();
   var ref = db.ref('orders');
   var ordersRef = ref.child('buys');
   var newOrderRef = ordersRef.push();
   var order = {
     '2FA': pad(randomIntFromInterval(0, 999999), 6),
-    'HHid': DEFAULT_HASHER.humanize(newOrderRef.key)
+    'HHid': DEFAULT_HASHER.humanize(newOrderRef.key)//,
+    // 'id': newRef.key()
   }
   newOrderRef.set(order);
-
   // .then()?
   // .catch()?
 
-  // ordersRef.set({
-  //   '2FA': pad(randomIntFromInterval(0, 999999), 6),
-  //   'id': newRef.key(),
-  //   'HHid': DEFAULT_HASHER.humanize(newRef.key())
-  // });
-  // firebase.database().ref('orders').set({
-  //   '2FA': pad(randomIntFromInterval(0, 999999), 6),
-  //   'id': newRef.key(),
-  //   'HHid': DEFAULT_HASHER.humanize(newRef.key())
-  // });
-  // 
-  // var ref = firebase.database().ref('/coin-otc/order/');
-  // var newRef = ref.push(); // doesn't call the server
-  // var newOrder = {
-  //   '2FA': pad(randomIntFromInterval(0, 999999), 6),
-  //   'id': newRef.key(),
-  //   'HHid': DEFAULT_HASHER.humanize(newRef.key())
-  // };
-  // newRef.set(newItem); // calls the server
   res
     .type('text/plain')
     .status(200)
