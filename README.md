@@ -3,6 +3,8 @@ Google Cloud Function(s) for Coin-OTC
 
 Deploy:
 
+`gcloud beta functions deploy test --stage-bucket coin-otc-gcf --trigger-http --entry-point test`
+
 `gcloud beta functions deploy auth --stage-bucket coin-otc-gcf --trigger-http --entry-point auth`
 
 `gcloud beta functions deploy send --stage-bucket coin-otc-gcf --trigger-http --entry-point send`
