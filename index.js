@@ -36,7 +36,8 @@ exports.test = (req, res) => {
     'HHid': DEFAULT_HASHER.humanize(newOrderRef.key)//,
     // 'id': newRef.key()
   }
-  newOrderRef.set(order);
+  // TODO: RE-ENABLE
+  // newOrderRef.set(order);
   // .then()?
   // .catch()?
 
