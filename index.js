@@ -15,6 +15,51 @@ admin.initializeApp({
   databaseURL: 'https://coin-otc.firebaseio.com'
 });
 
+// Authentication (see https://github.com/firebase/functions-samples/tree/master/authorized-https-endpoint)
+const express = require('express');
+const cookieParser = require('cookie-parser')();
+const cors = require('cors')({origin: true});
+const app = express();
+
+const validateFirebaseIdToken = (req, res, next) => {
+  console.log('Check if request is authorized with Firebase ID token');
+
+  if ((!req.headers.authorization || !req.headers.authorization.startsWith('Bearer ')) &&
+      !req.cookies.__session) {
+    console.error('No Firebase ID token was passed as a Bearer token in the Authorization header.',
+        'Make sure you authorize your request by providing the following HTTP header:',
+        'Authorization: Bearer <Firebase ID Token>',
+        'or by passing a "__session" cookie.');
+    res.status(403).send('Unauthorized');
+    return;
+  }
+
+  let idToken;
+  if (req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
+    console.log('Found "Authorization" header');
+    // Read the ID Token from the Authorization header.
+    idToken = req.headers.authorization.split('Bearer ')[1];
+  } else {
+    console.log('Found "__session" cookie');
+    // Read the ID Token from cookie.
+    idToken = req.cookies.__session;
+  }
+  admin.auth().verifyIdToken(idToken).then(decodedIdToken => {
+    console.log('ID Token correctly decoded', decodedIdToken);
+    req.user = decodedIdToken;
+    next();
+  }).catch(error => {
+    console.error('Error while verifying Firebase ID token:', error);
+    res
+      .status(403)
+      .send('Unauthorized');
+  });
+};
+
+app.use(cors);
+app.use(cookieParser);
+app.use(validateFirebaseIdToken);
+
 // Twilio Setup
 const accountSid = 'AC1b9c9ffd2e1b25cb611e4312e1e6979a'; // Your Account SID from www.twilio.com/console
 const authToken = '828599c4764a07fdf3943beda477db18';   // Your Auth Token from www.twilio.com/console
@@ -25,7 +70,9 @@ const MessagingResponse = twilio.twiml.MessagingResponse;
 const projectId = process.env.GCLOUD_PROJECT;
 const region = 'us-central1';
 
-exports.test = (req, res) => {
+app.get('/test', (req, res) => {
+  functions.https.onRequest(app);
+
   // Push new order to Firebase
   var db = admin.database();
   var ref = db.ref('orders');
@@ -37,7 +84,7 @@ exports.test = (req, res) => {
     // 'id': newRef.key()
   }
   // TODO: RE-ENABLE
-  // newOrderRef.set(order);
+  newOrderRef.set(order);
   // .then()?
   // .catch()?
 
@@ -46,81 +93,84 @@ exports.test = (req, res) => {
     .status(200)
     .send(order['2FA']);
   return
-};
+});
 
-exports.auth = (req, res) => {
-  // TODO proper auth
-  res
-    .type('text/plain')
-    .status(204)
-    .send('NO AUTH METHOD DEFINED')
-    .end();
-  return
-};
+exports.app = functions.https.onRequest(app);
+exports.test = functions.https.onRequest(app);
 
-exports.send = (req, res) => {
-  // TODO take input
-  var client = new twilio(accountSid, authToken);
+// exports.auth = (req, res) => {
+//   // TODO proper auth
+//   res
+//     .type('text/plain')
+//     .status(204)
+//     .send('NO AUTH METHOD DEFINED')
+//     .end();
+//   return
+// };
 
-  let isValid = true;
+// exports.send = (req, res) => {
+//   // TODO take input
+//   var client = new twilio(accountSid, authToken);
 
-  client.messages.create({
-    body: 'Hello from Node',
-    to: '+14053566661',  // Text this number
-    from: '+14158532646' // From a valid Twilio number
-  })
-  .then((message) => console.log(message.sid));
+//   let isValid = true;
 
-  // TODO proper response
-  res
-    .type('text/plain')
-    .status(200)
-    .send('MESSAGE SENT')
-    .end();
-  return
-};
+//   client.messages.create({
+//     body: 'Hello from Node',
+//     to: '+14053566661',  // Text this number
+//     from: '+14158532646' // From a valid Twilio number
+//   })
+//   .then((message) => console.log(message.sid));
 
-exports.reply = (req, res) => {
-  let isValid = true;
+//   // TODO proper response
+//   res
+//     .type('text/plain')
+//     .status(200)
+//     .send('MESSAGE SENT')
+//     .end();
+//   return
+// };
 
-  // Only validate that requests came from Twilio when the function has been
-  // deployed to production.
-  if (process.env.NODE_ENV === 'production') {
-    isValid = twilio.validateExpressRequest(req, twilioConfig.TWILIO_AUTH_TOKEN, {
-      url: `https://${region}-${projectId}.cloudfunctions.net/reply`
-    });
-  }
+// exports.reply = (req, res) => {
+//   let isValid = true;
 
-  // Halt early if the request was not sent from Twilio
-  if (!isValid) {
-    res
-      .type('text/plain')
-      .status(403)
-      .send('Twilio Request Validation Failed.')
-      .end();
-    return
-  }
+//   // Only validate that requests came from Twilio when the function has been
+//   // deployed to production.
+//   if (process.env.NODE_ENV === 'production') {
+//     isValid = twilio.validateExpressRequest(req, twilioConfig.TWILIO_AUTH_TOKEN, {
+//       url: `https://${region}-${projectId}.cloudfunctions.net/reply`
+//     });
+//   }
 
-  // Prepare a response to the SMS message
-  const response = new MessagingResponse();
+//   // Halt early if the request was not sent from Twilio
+//   if (!isValid) {
+//     res
+//       .type('text/plain')
+//       .status(403)
+//       .send('Twilio Request Validation Failed.')
+//       .end();
+//     return
+//   }
 
-  // Add text to the response
-  response.message('Hello from Google Cloud Functions!');
+//   // Prepare a response to the SMS message
+//   const response = new MessagingResponse();
 
-  // Send the response
-  // res
-  //   .status(200)
-  //   .type('text/xml')
-  //   .end(response.toString());
+//   // Add text to the response
+//   response.message('Hello from Google Cloud Functions!');
 
-  // No need to spend money (and part of our daily total) responding to any texts.
-  res
-    .type('text/plain')
-    .status(204)
-    .send('Twilio SMS Response not needed.')
-    .end();
-  return
-};
+//   // Send the response
+//   // res
+//   //   .status(200)
+//   //   .type('text/xml')
+//   //   .end(response.toString());
+
+//   // No need to spend money (and part of our daily total) responding to any texts.
+//   res
+//     .type('text/plain')
+//     .status(204)
+//     .send('Twilio SMS Response not needed.')
+//     .end();
+//   return
+// };
 
 function randomIntFromInterval(min, max) {
   return Math.floor(Math.random()*(max-min+1)+min);
