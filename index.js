@@ -71,8 +71,6 @@ const projectId = process.env.GCLOUD_PROJECT;
 const region = 'us-central1';
 
 app.get('/test', (req, res) => {
-  functions.https.onRequest(app);
-
   // Push new order to Firebase
   var db = admin.database();
   var ref = db.ref('orders');
@@ -84,7 +82,7 @@ app.get('/test', (req, res) => {
     // 'id': newRef.key()
   }
   // TODO: RE-ENABLE
-  newOrderRef.set(order);
+  // newOrderRef.set(order);
   // .then()?
   // .catch()?
 
@@ -95,18 +93,72 @@ app.get('/test', (req, res) => {
   return
 });
 
+app.post('/auth', (req, res) => {
+  // TODO validate req.body.number
+
+  // Push new order to Firebase
+  var db = admin.database();
+  var ref = db.ref('orders');
+  var ordersRef = ref.child('buys');
+  var newOrderRef = ordersRef.push();
+  var randToken = pad(randomIntFromInterval(0, 999999), 6);
+  var order = {
+    'phone': req.body.number,
+    'twoFA': randToken,
+    'HHid': DEFAULT_HASHER.humanize(newOrderRef.key)//,
+    // 'id': newRef.key()
+  }
+  newOrderRef.set(order);
+  // .then()?
+  // .catch()?
+
+  // Text 2FA code
+  /*
+  var client = new twilio(accountSid, authToken);
+
+  let isValid = true;
+
+  client.messages.create({
+    body: 'Coin-OTC 2FA Token: '+order['2FA'],
+    to: '+'+order['phone'],  // Text this number
+    from: '+14158532646' // From a valid Twilio number
+  })
+  .then((message) => console.log(message.sid));
+  */
+
+  res
+    .type('text/plain')
+    .status(202)
+    .send(newOrderRef.key);
+  return
+});
+
+app.post('/twoFA', (req, res) => {
+  // TODO validate orderUID
+  // TODO validate 2FA
+
+  // Check order's 2FA on Firebase
+  var db = admin.database();
+  var ref = db.ref('orders/buys/'+req.body.orderUID).once('value').then(function(snapshot) {
+    if(snapshot.val().twoFA == req.body.twoFA) {
+      res
+        .type('text/plain')
+        .status(202)
+        .send();
+    } else {
+      res
+        .type('text/plain')
+        .status(401)
+        .send();
+    }
+    return
+  });
+});
+
 exports.app = functions.https.onRequest(app);
 exports.test = functions.https.onRequest(app);
-
-// exports.auth = (req, res) => {
-//   // TODO proper auth
-//   res
-//     .type('text/plain')
-//     .status(204)
-//     .send('NO AUTH METHOD DEFINED')
-//     .end();
-//   return
-// };
+exports.auth = functions.https.onRequest(app);
+exports.twoFA = functions.https.onRequest(app);
 
 // exports.send = (req, res) => {
 //   // TODO take input
