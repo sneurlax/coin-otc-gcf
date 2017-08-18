@@ -70,29 +70,52 @@ const MessagingResponse = twilio.twiml.MessagingResponse;
 const projectId = process.env.GCLOUD_PROJECT;
 const region = 'us-central1';
 
+// Stub entry point
+exports.api = functions.https.onRequest(app);
+app.get('/api', (req, res) => {});
+
+exports.test = functions.https.onRequest(app);
 app.get('/test', (req, res) => {
   // Push new order to Firebase
   var db = admin.database();
   var ref = db.ref('orders');
   var ordersRef = ref.child('buys');
   var newOrderRef = ordersRef.push();
+  var randToken = pad(randomIntFromInterval(0, 999999), 6);
   var order = {
-    '2FA': pad(randomIntFromInterval(0, 999999), 6),
+    '2FA': randToken,
     'HHid': DEFAULT_HASHER.humanize(newOrderRef.key)//,
     // 'id': newRef.key()
   }
-  // TODO: RE-ENABLE
-  // newOrderRef.set(order);
+  newOrderRef.set(order);
   // .then()?
   // .catch()?
 
-  res
-    .type('text/plain')
-    .status(200)
-    .send(order['2FA']);
-  return
+  // Text 2FA code
+  var client = new twilio(accountSid, authToken);
+
+  client.messages.create({
+    body: 'Coin-OTC 2FA Token: '+order['2FA'],
+    to: '+1'+order['phone'],  // Text this number
+    from: '+14158532646' // From a valid Twilio number
+  })
+  .then((message) => {
+    res
+      .type('text/plain')
+      .status(202)
+      .send(newOrderRef.key);
+    return
+  })
+  .catch((error) => {
+    res
+      .type('text/plain')
+      .status(400)
+      .send(newOrderRef.key);
+    return
+  });
 });
 
+exports.auth = functions.https.onRequest(app);
 app.post('/auth', (req, res) => {
   // TODO validate req.body.number
 
@@ -113,26 +136,30 @@ app.post('/auth', (req, res) => {
   // .catch()?
 
   // Text 2FA code
-  /*
   var client = new twilio(accountSid, authToken);
-
-  let isValid = true;
 
   client.messages.create({
     body: 'Coin-OTC 2FA Token: '+order['2FA'],
-    to: '+'+order['phone'],  // Text this number
+    to: '+1'+order['phone'],  // Text this number
     from: '+14158532646' // From a valid Twilio number
   })
-  .then((message) => console.log(message.sid));
-  */
-
-  res
-    .type('text/plain')
-    .status(202)
-    .send(newOrderRef.key);
-  return
+  .then((message) => {
+    res
+      .type('text/plain')
+      .status(202)
+      .send(newOrderRef.key);
+    return
+  })
+  .catch((error) => {
+    res
+      .type('text/plain')
+      .status(400)
+      .send(newOrderRef.key);
+    return
+  });
 });
 
+exports.twoFA = functions.https.onRequest(app);
 app.post('/twoFA', (req, res) => {
   // TODO validate orderUID
   // TODO validate 2FA
@@ -154,11 +181,6 @@ app.post('/twoFA', (req, res) => {
     return
   });
 });
-
-exports.app = functions.https.onRequest(app);
-exports.test = functions.https.onRequest(app);
-exports.auth = functions.https.onRequest(app);
-exports.twoFA = functions.https.onRequest(app);
 
 // exports.send = (req, res) => {
 //   // TODO take input
@@ -223,6 +245,8 @@ exports.twoFA = functions.https.onRequest(app);
 //     .end();
 //   return
 // };
+
+exports.app = functions.https.onRequest(app);
 
 function randomIntFromInterval(min, max) {
   return Math.floor(Math.random()*(max-min+1)+min);
